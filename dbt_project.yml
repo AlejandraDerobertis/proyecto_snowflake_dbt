@@ -2,7 +2,7 @@
 # Name your project! Project names should contain only lowercase characters
 # and underscores. A good package name should reflect your organization's
 # name or the intended use of these models
-name: 'my_new_project'
+name: 'crypto_project'
 version: '1.0.0'
 config-version: 2
 
@@ -35,8 +35,18 @@ clean-targets:         # directories to be removed by `dbt clean`
 # continue to be built as views. These settings can be overridden in the individual model files
 # using the `{{ config(...) }}` macro.
 
+# Configuración para materialización de modelos
 models:
-  my_new_project:
-    # Applies to all files under models/example/
-    example:
-      +materialized: table
+  crypto_project:  # Nombre del proyecto
+    staging:  # Modelos staging (Silver)
+      +database: DEV_SILVER_DB
+      +schema: staging
+      +materialized: view  # Por defecto, todo será vista
+    intermediate:  # Modelos intermedios (Silver)
+      +database: DEV_SILVER_DB
+      +schema: intermediate
+      +materialized: view
+    marts:  # Modelos finales (Gold)
+      +database: DEV_GOLD_DB
+      +schema: marts
+      +materialized: table  # Por defecto, los modelos finales serán tablas

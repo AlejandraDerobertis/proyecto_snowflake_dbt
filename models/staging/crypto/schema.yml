@@ -1,0 +1,299 @@
+version: 2
+
+sources:
+  - name: crypto
+    description: "Esquema CRYPTO en la base de datos DEV_BRONZE_DB de snowflake que contiene tablas con datos de criptomonedas."
+    database: DEV_BRONZE_DB
+    schema: CRYPTO
+    tables:
+      - name: crypto_data
+        description: "Datos generales de criptomonedas provenientes de una API."
+        columns:
+          - name: ID
+            description: "Identificador único de la criptomoneda en el proyecto."
+            tests:
+              - not_null
+              - unique
+          - name: SYMBOL
+            description: "Símbolo de la criptomoneda."
+          - name: NAME
+            description: "Nombre de la criptomoneda."
+          - name: API_TIME
+            description: "Marca de tiempo de la ingesta desde la API."
+
+      - name: crypto_prices
+        description: "Precios actuales y métricas de criptomonedas."
+        columns:
+          - name: ID
+            description: "Identificador único."
+            tests:
+              - not_null
+              - unique
+          - name: CURRENT_PRICE
+            description: "Precio actual."
+          - name: MARKET_CAP
+            description: "Capitalización de mercado."
+          - name: INGEST_TIMESTAMP
+            description: "Fecha y hora de ingesta de los datos."
+
+      - name: crypto_redes
+        description: "Información sobre redes blockchain asociadas a criptomonedas."
+        columns:
+          - name: CODE
+            description: "Código único de la red."
+            tests:
+              - not_null
+              - unique
+          - name: NAME
+            description: "Nombre de la red."
+          - name: EXPLORER
+            description: "URL del explorador de bloques para la red."
+          - name: BLOCKCHAIN_TYPE
+            description: "Tipo de blockchain."
+
+      - name: crypto_tokens
+        description: "Información sobre tokens (criptomonedas)."
+        columns:
+          - name: SYMBOL
+            description: "Símbolo del token."
+            tests:
+              - not_null
+              - unique
+          - name: NAME
+            description: "Nombre del token."
+          - name: NETWORK
+            description: "Red blockchain a la que pertenece el token."
+
+      - name: crypto_transactions
+        description: "Historial de transacciones."
+        columns:
+          - name: TRANSACTION_TYPE
+            description: "Tipo de transacción."
+          - name: HASH
+            description: "Hash único de la transacción."
+            tests:
+              - not_null
+              - unique
+          - name: NETWORK
+            description: "Red blockchain en la que ocurrió la transacción."
+          - name: QUANTITY
+            description: "Cantidad transferida."
+          - name: FROM_ADDRESS
+            description: "Dirección de origen."
+          - name: TO_ADDRESS
+            description: "Dirección de destino."
+          - name: DATE
+            description: "Fecha."
+          - name: TIME
+            description: "Hora."
+
+models:
+  - name: stg_dim_time
+    description: "Modelo staging para la dimensión de tiempos, que contiene información granular sobre horas, minutos y segundos, y genera un identificador único basado en el tiempo."
+    columns:
+      - name: time_id
+        description: "Identificador único del tiempo en formato HHMMSS."
+        tests:
+          - not_null
+          - unique
+      - name: time
+        description: "Hora original en formato TIME, extraída de la fuente de datos."
+        tests:
+          - not_null
+      - name: hour
+        description: "Hora extraída del tiempo."
+        tests:
+          - not_null
+      - name: minute
+        description: "Minuto extraído del tiempo."
+        tests:
+          - not_null
+      - name: second
+        description: "Segundo extraído del tiempo."
+        tests:
+          - not_null
+  - name: stg_dim_date
+    description: "Modelo staging para la dimensión de fechas, que contiene información granular sobre años, meses, días y fines de semana."
+    columns:
+      - name: date_id
+        description: "ID de la fecha en formato YYYYMMDD."
+        tests:
+          - not_null
+          - unique
+      - name: date
+        description: "Fecha en formato DATE."
+        tests:
+          - not_null
+      - name: year
+        description: "Año extraído de la fecha."
+        tests:
+          - not_null
+      - name: month
+        description: "Mes extraído de la fecha."
+        tests:
+          - not_null
+      - name: day
+        description: "Día extraído de la fecha."
+        tests:
+          - not_null
+      - name: day_of_week
+        description: "Día de la semana."
+      - name: is_weekend
+        description: "Indicador de si la fecha cae en fin de semana."
+  - name: stg_dim_networks
+    description: "Modelo staging para la dimensión de redes blockchain. Contiene información única sobre las redes, incluyendo su nombre, código, URL de explorador y tipo de blockchain."
+    columns:
+      - name: network_id
+        description: "Id generado secuencialmente para cada red."
+        tests:
+          - not_null
+          - unique
+      - name: network_code
+        description: "Código único de la red blockchain."
+      - name: network_name
+        description: "Nombre de la red blockchain."
+      - name: explorer_url
+        description: "URL del explorador de bloques."
+      - name: hex_id
+        description: "Identificador hexadecimal único de la red."
+      - name: rpc_url
+        description: "URL del nodo RPC de la red."
+      - name: blockchain_type
+        description: "Tipo de blockchain."
+  - name: stg_dim_tokens
+    description: "Modelo staging para la dimensión de tokens. Contiene información clave sobre cada token, incluyendo su símbolo, nombre, contrato y red asociada."
+    columns:
+      - name: token_id
+        description: "Id generado secuencialmente para cada token."
+        tests:
+          - not_null
+          - unique
+      - name: token_symbol
+        description: "Símbolo único del token por red."
+        tests:
+          - not_null
+      - name: token_name
+        description: "Nombre del token."
+        tests:
+          - not_null
+      - name: contract_address
+        description: "Dirección del contrato del token en la blockchain."
+      - name: network_code
+        description: "Código de la red blockchain a la que pertenece el token, usado como referencia inicial."
+      - name: network_id
+        description: "Identificador único de la red blockchain asociada al token, mapeado desde el modelo `stg_dim_networks`."
+        tests:
+        - not_null
+        - relationships:
+            to: ref('stg_dim_networks')
+            field: network_id
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - token_symbol
+            - network_code
+  - name: fact_live_data
+    description: "Tabla de hechos que contiene datos en tiempo real sobre criptomonedas, incluyendo precios, capitalización y volumen circulante, mapeados a dimensiones de tiempo y fecha."
+    columns:
+    - name: id
+      description: "Identificador único del registro."
+      tests:
+        - not_null
+        - unique
+    - name: symbol
+      description: "Símbolo de la criptomoneda."
+      tests:
+        - not_null
+    - name: token_name
+      description: "Nombre del token asociado al símbolo."
+    - name: price
+      description: "Precio actual."
+    - name: market_capitalization
+      description: "Capitalización de mercado."
+    - name: circulating_supply
+      description: "Volumen circulante de la criptomoneda."
+    - name: date_id
+      description: "Identificador de la dimensión de fechas asociada al registro."
+      tests:
+        - not_null
+        - relationships:
+            to: ref('stg_dim_dates')
+            field: date_id
+    - name: time_id
+      description: "Identificador de la dimensión de tiempos asociada al registro."
+      tests:
+        - not_null
+        - relationships:
+            to: ref('stg_dim_times')
+            field: time_id
+    - name: stg_fact_transactions
+      description: "Modelo staging para la tabla de hechos de transacciones. Maneja transacciones normales y swaps, con reglas específicas según el tipo de transacción."
+      columns:
+        - name: transaction_id
+          description: "Identificador único para cada transacción."
+          tests:
+          - not_null
+          - unique
+        - name: transaction_hash
+          description: "Hash único de la transacción."
+          tests:
+          - not_null
+          - unique
+        - name: transaction_type
+          description: "Tipo de transacción: 'T' para transacción normal y 'S' para swap."
+          tests:
+          - not_null
+        - name: network_code
+          description: "Código de la red blockchain asociada a la transacción."
+          tests:
+          - not_null
+          - relationships:
+              to: ref('stg_dim_networks')
+              field: network_code
+        - name: token_symbol
+          description: "Símbolo del token asociado a una transacción normal (tipo 'T')."
+          tests:
+          - not_null:
+              severity: warn  # Solo advertimos si no está presente (solo aplica a tipo 'T')
+        - name: quantity
+          description: "Cantidad transferida en una transacción normal (tipo 'T')."
+        - name: from_token_symbol
+          description: "Símbolo del token enviado en un swap (tipo 'S')."
+        - name: to_token_symbol
+          description: "Símbolo del token recibido en un swap (tipo 'S')."
+        - name: from_quantity
+          description: "Cantidad enviada en un swap (tipo 'S')."
+        - name: to_quantity
+          description: "Cantidad recibida en un swap (tipo 'S')."
+        - name: from_address
+          description: "Dirección de origen de la transacción."
+        - name: to_address
+          description: "Dirección de destino de la transacción."
+        - name: transaction_date
+          description: "Fecha en que ocurrió la transacción."
+          tests:
+          - not_null
+        - name: transaction_time
+          description: "Hora en que ocurrió la transacción."
+          tests:
+          - not_null
+        - name: date_id
+          description: "Identificador de la dimensión de fechas asociada a la transacción."
+          tests:
+          - not_null
+          - relationships:
+              to: ref('stg_dim_dates')
+              field: date_id
+        - name: time_id
+          description: "Identificador de la dimensión de tiempos asociada a la transacción."
+          tests:
+          - not_null
+          - relationships:
+              to: ref('stg_dim_times')
+              field: time_id
+        - name: gas_cost
+          description: "Costo del gas consumido en la transacción."
+
+
+
+  
