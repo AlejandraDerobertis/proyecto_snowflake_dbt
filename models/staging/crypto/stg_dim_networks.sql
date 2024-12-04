@@ -16,7 +16,12 @@ WITH unique_networks AS (
 
 transformed_networks AS (
     SELECT
-        ROW_NUMBER() OVER (ORDER BY network_code) AS network_id,
+        MD5(CONCAT(
+        TRIM(network_code), 
+        INITCAP(TRIM(network_name)),  
+        TRIM(RPC_URL), 
+        INITCAP(TRIM(BLOCKCHAIN_TYPE))
+        )) AS network_id,  -- ID determinístico
         network_code,
         network_name,
         explorer_url,

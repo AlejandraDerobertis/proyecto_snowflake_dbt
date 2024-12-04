@@ -1,0 +1,22 @@
+version: 2
+
+models:
+  - name: crypto_volatility
+    description: Métricas de volatilidad diaria de criptomonedas, incluyendo desviación estándar y rango porcentual.
+    columns:
+      - name: symbol
+        description: Símbolo de la criptomoneda.
+      - name: date_id
+        description: Identificador de la fecha.
+      - name: time_id
+        description: Identificador del tiempo.
+      - name: highest_price
+        description: Precio más alto del día.
+      - name: lowest_price
+        description: Precio más bajo del día.
+      - name: average_price
+        description: Precio promedio del día.
+      - name: price_volatility
+        description: Volatilidad del precio diario (desviación estándar).
+      - name: daily_range_percent
+        description: Porcentaje del rango diario basado en los precios más alto y más bajo.
