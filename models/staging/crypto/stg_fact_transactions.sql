@@ -12,7 +12,7 @@ WITH transactions_base AS (
         CASE 
             WHEN TRANSACTION_TYPE = 0 THEN CAST(TRIM(TOKEN) AS VARCHAR(255)) 
             ELSE NULL 
-        END AS token_symbol,
+        END AS token_contract,
         CASE 
             WHEN TRANSACTION_TYPE = 0 THEN CAST(QUANTITY AS FLOAT) 
             ELSE NULL 
@@ -20,11 +20,11 @@ WITH transactions_base AS (
         CASE 
             WHEN TRANSACTION_TYPE = 1 THEN CAST(TRIM(FROM_TOKEN) AS VARCHAR(255)) 
             ELSE NULL 
-        END AS from_token_symbol,
+        END AS from_token_contract,
         CASE 
             WHEN TRANSACTION_TYPE = 1 THEN CAST(TRIM(TO_TOKEN) AS VARCHAR(255)) 
             ELSE NULL 
-        END AS to_token_symbol,
+        END AS to_token_contract,
         CASE 
             WHEN TRANSACTION_TYPE = 1 THEN CAST(FROM_QUANTITY AS FLOAT) 
             ELSE NULL 
@@ -44,14 +44,13 @@ WITH transactions_base AS (
 
 mapped_transactions AS (
     SELECT
-        ROW_NUMBER() OVER (ORDER BY transaction_hash) AS transaction_id,
         transaction_hash,
         transaction_type,
         network_code,
-        token_symbol,
+        token_contract,
         quantity,
-        from_token_symbol,
-        to_token_symbol,
+        from_token_contract,
+        to_token_contract,
         from_quantity,
         to_quantity,
         from_address,
@@ -65,7 +64,7 @@ mapped_transactions AS (
     LEFT JOIN {{ ref('stg_dim_dates') }} AS dates
         ON transactions_base.transaction_date = dates.date
     LEFT JOIN {{ ref('stg_dim_times') }} AS times
-        ON transactions_base.transaction_time = times.time
+       ON CAST(SUBSTR(CAST(transactions_base.transaction_time AS STRING), 1, 8) AS TIME) = times.time
 )
 
 SELECT *

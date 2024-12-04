@@ -1,0 +1,130 @@
+version: 2
+    
+models:
+  - name: int_fact_transactions
+    description: Transacciones entre cuentas en una misma moneda
+    columns:
+      - name: hash
+        description: Identificador único de la transacción
+        tests:
+          - not_null
+          - unique
+      - name: network_id
+        description: Símbolo de la red donde se ha realizado la transacción
+        tests:
+          - not_null
+          - relationships:
+                to: ref('stg_dim_networks')
+                field: id
+      - name: token
+        description: Contrato del token de la transaccion
+        tests:
+          - not_null
+      - name: from_address
+        description: Emisor de la transaccion
+        tests:
+          - not_null
+      - name: to_address
+        description: Receptor de la transacción
+        tests:
+          - not_null
+      - name: quantity
+        description: Cantidad de la transacción
+        tests:
+          - not_null
+      - name: gas_cost
+        description: Cost of the transaction
+        tests:
+          - not_null
+      - name: date_id
+        description: date of the transaction
+        tests:
+          - not_null
+          - relationships:
+                to: ref('stg_dim_dates')
+                field: date_id
+      - name: time_id
+        description: time of the transaction
+        tests:
+          - not_null
+          - relationships:
+                to: ref('stg_dim_times')
+                field: time_id
+
+
+  - name: int_fact_swaps
+    description: Intercambios entre distintas monedas
+    columns:
+      - name: hash
+        description: Identificador único de la transacción
+        tests:
+          - not_null
+          - unique
+      - name: network_id
+        description: Símbolo de la red donde se ha realizado la transacción
+        tests:
+          - not_null
+          - relationships:
+                to: ref('stg_dim_networks')
+                field: id
+      - name: from_token
+        description: Contrato del token de origen
+        tests:
+          - not_null
+      - name: token_to
+        description: Contrato del token de destino
+        tests:
+          - not_null
+      - name: from_address
+        description: Emisor de la transaccion
+        tests:
+          - not_null
+      - name: to_address
+        description: Receptor de la transacción
+        tests:
+          - not_null
+      - name: from_quantity
+        description: Cantidad del token de origen en la transacción
+        tests:
+          - not_null
+      - name: to_quantity
+        description: Cantidad del token de origen en la transacción
+        tests:
+          - not_null
+      - name: gas_cost
+        description: Cost of the transaction
+        tests:
+          - not_null
+      - name: date_id
+        description: date of the transaction
+        tests:
+          - not_null
+          - relationships:
+                to: ref('stg_dim_dates')
+                field: date_id
+      - name: time_id
+        description: time of the transaction
+        tests:
+          - not_null
+          - relationships:
+                to: ref('stg_dim_times')
+                field: time_id
+
+  - name: crypto_prices_metrics
+    description: Métricas base para precios de criptomonedas, incluyendo máximo, mínimo y promedio.
+    columns:
+      - name: symbol
+        description: Símbolo.
+      - name: date_id
+        description: Identificador de la fecha.
+      - name: time_id
+        description: Identificador del tiempo.
+      - name: highest_price
+        description: Precio más alto registrado en el día.
+      - name: lowest_price
+        description: Precio más bajo registrado en el día.
+      - name: average_price
+        description: Precio promedio del día.
+
+      
+

@@ -6,20 +6,6 @@ sources:
     database: DEV_BRONZE_DB
     schema: CRYPTO
     tables:
-      - name: crypto_data
-        description: "Datos generales de criptomonedas provenientes de una API."
-        columns:
-          - name: ID
-            description: "Identificador único de la criptomoneda en el proyecto."
-            tests:
-              - not_null
-              - unique
-          - name: SYMBOL
-            description: "Símbolo de la criptomoneda."
-          - name: NAME
-            description: "Nombre de la criptomoneda."
-          - name: API_TIME
-            description: "Marca de tiempo de la ingesta desde la API."
 
       - name: crypto_prices
         description: "Precios actuales y métricas de criptomonedas."
@@ -87,59 +73,117 @@ sources:
           - name: TIME
             description: "Hora."
 
+      - name: rank_time
+        description: Dimensión completa de tiempos (24 horas, 60 minutos, 60 segundos)en formato HH:MM:SS.
+        columns:
+              - name: time_id
+                description: "Identificador único para cada combinación de tiempo."
+                tests:
+                  - not_null
+                  - unique
+              - name: time
+                description: "Tiempo en formato HH:MM:SS."
+              - name: hour
+                description: "Hora (0-23)."
+              - name: minute
+                description: "Minuto (0-59)."
+              - name: second
+                description: "Segundo (0-59)."
+
+      - name: rank_date
+        description: "Tabla con todas las fechas desde 2000 hasta 2050."
+        columns:
+          - name: date_id
+            description: "Identificador único para cada fecha."
+            tests:
+              - not_null
+              - unique
+          - name: date
+            description: "Fecha en formato YYYY-MM-DD."
+          - name: day_of_week
+            description: "Nombre del día de la semana."
+          - name: is_weekend
+            description: "Indica si la fecha corresponde a un fin de semana."
+
+      - name: crypto_events
+        description: "Tabla fuente que contiene eventos relacionados con criptomonedas."
+        columns:
+          - name: source
+            description: Fuente del evento.
+            tests:
+              - not_null
+
+          - name: event
+            description: Descripción del evento.
+            tests:
+              - not_null
+
+          - name: sentiment
+            description: "Sentimiento asociado al evento (positivo, negativo, neutral)."
+            tests:
+              - not_null
+              - accepted_values:
+                  values: ['positive', 'negative', 'neutral']
+
+          - name: score
+            description: Puntuación del sentimiento del evento, normalmente un valor numérico.
+            tests:
+              - not_null
+
+          - name: date
+            description: Fecha y hora del evento en formato TIMESTAMP.
+            tests:
+              - not_null
+
+            
+                  
+
+
+
 models:
-  - name: stg_dim_time
-    description: "Modelo staging para la dimensión de tiempos, que contiene información granular sobre horas, minutos y segundos, y genera un identificador único basado en el tiempo."
-    columns:
-      - name: time_id
-        description: "Identificador único del tiempo en formato HHMMSS."
-        tests:
-          - not_null
-          - unique
-      - name: time
-        description: "Hora original en formato TIME, extraída de la fuente de datos."
-        tests:
-          - not_null
-      - name: hour
-        description: "Hora extraída del tiempo."
-        tests:
-          - not_null
-      - name: minute
-        description: "Minuto extraído del tiempo."
-        tests:
-          - not_null
-      - name: second
-        description: "Segundo extraído del tiempo."
-        tests:
-          - not_null
-  - name: stg_dim_date
-    description: "Modelo staging para la dimensión de fechas, que contiene información granular sobre años, meses, días y fines de semana."
+  - name: stg_dim_dates
+    description: "Modelo staging para la dimensión de fechas."
     columns:
       - name: date_id
-        description: "ID de la fecha en formato YYYYMMDD."
+        description: "Identificador único para cada fecha."
         tests:
           - not_null
           - unique
       - name: date
-        description: "Fecha en formato DATE."
-        tests:
-          - not_null
-      - name: year
-        description: "Año extraído de la fecha."
-        tests:
-          - not_null
-      - name: month
-        description: "Mes extraído de la fecha."
-        tests:
-          - not_null
-      - name: day
-        description: "Día extraído de la fecha."
+        description: "Fecha en formato YYYY-MM-DD."
         tests:
           - not_null
       - name: day_of_week
-        description: "Día de la semana."
+        description: "Nombre del día de la semana."
       - name: is_weekend
-        description: "Indicador de si la fecha cae en fin de semana."
+        description: "Indica si la fecha corresponde a un fin de semana."
+
+
+  - name: stg_dim_times
+    description: "Modelo staging para la dimensión de tiempo. Contiene todas las combinaciones posibles de horas, minutos y segundos."
+    columns:
+      - name: time_id
+        description: "Identificador único para cada combinación de tiempo."
+        tests:
+          - not_null
+          - unique
+      - name: time
+        description: "Tiempo en formato HH:MM:SS."
+        tests:
+          - not_null
+      - name: hour
+        description: "Hora (0-23)."
+        tests:
+          - not_null
+      - name: minute
+        description: "Minuto (0-59)."
+        tests:
+          - not_null
+      - name: second
+        description: "Segundo (0-59)."
+        tests:
+          - not_null
+
   - name: stg_dim_networks
     description: "Modelo staging para la dimensión de redes blockchain. Contiene información única sobre las redes, incluyendo su nombre, código, URL de explorador y tipo de blockchain."
     columns:
@@ -160,6 +204,7 @@ models:
         description: "URL del nodo RPC de la red."
       - name: blockchain_type
         description: "Tipo de blockchain."
+
   - name: stg_dim_tokens
     description: "Modelo staging para la dimensión de tokens. Contiene información clave sobre cada token, incluyendo su símbolo, nombre, contrato y red asociada."
     columns:
@@ -192,6 +237,7 @@ models:
           combination_of_columns:
             - token_symbol
             - network_code
+
   - name: fact_live_data
     description: "Tabla de hechos que contiene datos en tiempo real sobre criptomonedas, incluyendo precios, capitalización y volumen circulante, mapeados a dimensiones de tiempo y fecha."
     columns:
@@ -226,73 +272,110 @@ models:
         - relationships:
             to: ref('stg_dim_times')
             field: time_id
-    - name: stg_fact_transactions
-      description: "Modelo staging para la tabla de hechos de transacciones. Maneja transacciones normales y swaps, con reglas específicas según el tipo de transacción."
-      columns:
-        - name: transaction_id
-          description: "Identificador único para cada transacción."
-          tests:
-          - not_null
-          - unique
-        - name: transaction_hash
-          description: "Hash único de la transacción."
-          tests:
-          - not_null
-          - unique
-        - name: transaction_type
-          description: "Tipo de transacción: 'T' para transacción normal y 'S' para swap."
-          tests:
-          - not_null
-        - name: network_code
-          description: "Código de la red blockchain asociada a la transacción."
-          tests:
-          - not_null
-          - relationships:
-              to: ref('stg_dim_networks')
-              field: network_code
-        - name: token_symbol
-          description: "Símbolo del token asociado a una transacción normal (tipo 'T')."
-          tests:
-          - not_null:
-              severity: warn  # Solo advertimos si no está presente (solo aplica a tipo 'T')
-        - name: quantity
-          description: "Cantidad transferida en una transacción normal (tipo 'T')."
-        - name: from_token_symbol
-          description: "Símbolo del token enviado en un swap (tipo 'S')."
-        - name: to_token_symbol
-          description: "Símbolo del token recibido en un swap (tipo 'S')."
-        - name: from_quantity
-          description: "Cantidad enviada en un swap (tipo 'S')."
-        - name: to_quantity
-          description: "Cantidad recibida en un swap (tipo 'S')."
-        - name: from_address
-          description: "Dirección de origen de la transacción."
-        - name: to_address
-          description: "Dirección de destino de la transacción."
-        - name: transaction_date
-          description: "Fecha en que ocurrió la transacción."
-          tests:
-          - not_null
-        - name: transaction_time
-          description: "Hora en que ocurrió la transacción."
-          tests:
-          - not_null
-        - name: date_id
-          description: "Identificador de la dimensión de fechas asociada a la transacción."
-          tests:
-          - not_null
-          - relationships:
-              to: ref('stg_dim_dates')
-              field: date_id
-        - name: time_id
-          description: "Identificador de la dimensión de tiempos asociada a la transacción."
-          tests:
-          - not_null
-          - relationships:
-              to: ref('stg_dim_times')
-              field: time_id
-        - name: gas_cost
-          description: "Costo del gas consumido en la transacción."
+
+  - name: stg_fact_transactions
+    description: "Modelo staging para la tabla de hechos de transacciones. Maneja transacciones normales y swaps, con reglas específicas según el tipo de transacción."
+    columns:
+      - name: transaction_hash
+        description: "Hash único de la transacción."
+        tests:
+        - not_null
+        - unique
+      - name: transaction_type
+        description: "Tipo de transacción: 'T' para transacción normal y 'S' para swap."
+        tests:
+        - not_null
+      - name: network_code
+        description: "Código de la red blockchain asociada a la transacción."
+        tests:
+        - not_null
+        - relationships:
+            to: ref('stg_dim_networks')
+            field: network_code
+      - name: token_contract
+        description: "Contrato único del token asociado a una transacción normal (tipo 'T')."
+        tests:
+        - not_null:
+            severity: warn  # Solo advertimos si no está presente (solo aplica a tipo 'T')
+      - name: quantity
+        description: "Cantidad transferida en una transacción normal (tipo 'T')."
+      - name: from_token_contract
+        description: "Contrato único del token enviado en un swap (tipo 'S')."
+      - name: to_token_contract
+        description: "Contrato único del token recibido en un swap (tipo 'S')."
+      - name: from_quantity
+        description: "Cantidad enviada en un swap (tipo 'S')."
+      - name: to_quantity
+        description: "Cantidad recibida en un swap (tipo 'S')."
+      - name: from_address
+        description: "Dirección de origen de la transacción."
+      - name: to_address
+        description: "Dirección de destino de la transacción."
+      - name: transaction_date
+        description: "Fecha en que ocurrió la transacción."
+        tests:
+        - not_null
+        - relationships:
+            to: ref('stg_dim_dates')
+            field: date
+      - name: transaction_time
+        description: "Hora en que ocurrió la transacción."
+        tests:
+        - not_null
+        - relationships:
+              to: ref('stg_dim_times')   
+              field: time             
+      - name: date_id
+        description: "Identificador de la dimensión de fechas asociada a la transacción."
+        tests:
+        - not_null
+        - relationships:
+            to: ref('stg_dim_dates')
+            field: date_id
+      - name: time_id
+        description: "Identificador de la dimensión de tiempos asociada a la transacción."
+        tests:
+        - not_null
+        - relationships:
+            to: ref('stg_dim_times')
+            field: time_id
+      - name: gas_cost
+        description: "Costo del gas consumido en la transacción."
+
+
+      - name: crypto_events
+        description: Tabla fuente que contiene eventos de diferentes fuentes.
+        columns:
+          - name: source
+            description: "Fuente del evento."
+            tests:
+              - not_null
+        
+          - name: event
+            description: Descripcióm del evento.
+            tests:
+            - not_null
+
+          - name: sentiment
+            description: Sentimiento asociado al evento, puede ser POSITIVO, NEGATIVO Y NEUTRO
+            tests:
+              - not_null
+          
+          - name: score 
+            description: Puntuación de sentimiento del evento, va de 0 a 1 siendo 0 muy positivo y 1 muy negativo.
+            tests:
+              - not_null
+            
+          - name: event_date
+            description: Fecha y hora del evento en formato TIMESTAMP.
+            tests:
+              - not_null
+
+          - name: id_events
+            description: Clave primaria generada al combinar la fuente y la fecha del evento.
+            tests:
+              - not_null
+              - unique
 
 
 
