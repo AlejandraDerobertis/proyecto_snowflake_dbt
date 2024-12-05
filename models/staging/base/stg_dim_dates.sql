@@ -1,4 +1,6 @@
-{{ config(materialized='view') }}
+{{ config(  materialized='table',
+            schema='core'
+) }}
 
 WITH base_dates AS (
     SELECT

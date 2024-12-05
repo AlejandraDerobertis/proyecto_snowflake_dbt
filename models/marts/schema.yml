@@ -20,3 +20,137 @@ models:
         description: Volatilidad del precio diario (desviación estándar).
       - name: daily_range_percent
         description: Porcentaje del rango diario basado en los precios más alto y más bajo.
+
+
+  - name: mart_networks_analysis
+    description: Análisis de la red más utilizada en función del número de transacciones y el volumen total.
+    columns:
+      - name: network_id
+        description: Identificador único de la red.
+        tests:
+          - not_null
+          - unique
+      - name: network_name
+        description: Nombre de la red.
+        tests:
+          - not_null
+      - name: network_code
+        description: Código de la red.
+        tests:
+          - not_null
+      - name: total_transactions
+        description: Número total de transacciones por red.
+        tests:
+          - not_null
+      - name: total_volume_network
+        description: Volumen total de transacciones por red.
+        tests:
+          - not_null
+      - name: transaction_rank
+        description: Ranking de la red en base al número de transacciones.
+      - name: volume_rank
+        description: Ranking de la red en base al volumen de transacciones.
+
+
+  - name: mart_tokens_analysis
+    description: Análisis de las monedas más usadas por tipo de transacción.
+    columns:
+      - name: token_symbol
+        description: Símbolo de la criptomoneda.
+        tests:
+          - not_null
+      - name: transaction_type
+        description: "Tipo de transacción: 'T' para transactions o 'S' para swaps."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['T', 'S']
+      - name: total_transactions
+        description: Número total de transacciones por moneda.
+        tests:
+          - not_null
+      - name: total_volume
+        description: Volumen total de transacciones por moneda.
+        tests:
+          - not_null
+      - name: transaction_rank
+        description: Ranking de la moneda según el número de transacciones.
+        tests:
+          - not_null
+      - name: volume_rank
+        description: Ranking de la moneda según el volumen total.
+        tests:
+          - not_null
+
+  - name: mart_hot_times_analysis
+    description: Análisis de los días y horas más activos por tipo de transacción.
+    columns:
+      - name: date
+        description: Fecha de la transacción.
+        tests:
+          - not_null
+      - name: time
+        description: Hora de la transacción.
+        tests:
+          - not_null
+      - name: transaction_type
+        description: Tipo de transacción ('S' para swaps, 'T' para transactions).
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['S', 'T']
+      - name: total_transactions
+        description: Número total de transacciones por día y hora.
+        tests:
+          - not_null
+      - name: total_volume
+        description: Volumen total de transacciones por día y hora.
+        tests:
+          - not_null
+      - name: transaction_rank
+        description: Ranking por número de transacciones.
+      - name: volume_rank
+        description: Ranking por volumen de transacciones.
+
+version: 2
+
+models:
+  - name: mart_event_price_analysis
+    description: Análisis de la variación de precios en relación con eventos y su sentimiento.
+    columns:
+      - name: id_events
+        description: Identificador único del evento.
+        tests:
+          - not_null
+      - name: date
+        description: Fecha del evento.
+        tests:
+          - not_null
+      - name: time
+        description: Hora del evento.
+        tests:
+          - not_null
+      - name: symbol
+        description: Símbolo de la criptomoneda.
+        tests:
+          - not_null
+      - name: daily_price
+        description: Precio diario de la criptomoneda en relación con el evento.
+        tests:
+          - not_null
+      - name: daily_variation
+        description: Variación diaria del precio en relación con el evento.
+      - name: cumulative_variation
+        description: Variación acumulativa del precio en relación con el evento.
+      - name: sentiment
+        description: Sentimiento asociado al evento.
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['positive', 'negative', 'neutral']
+      - name: sentiment_alignment
+        description: Clasificación de la variación de precios según el sentimiento.
+        tests:
+          - accepted_values:
+              values: ['aligned_positive', 'aligned_negative', 'misaligned']
+

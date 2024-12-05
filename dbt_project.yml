@@ -37,7 +37,7 @@ clean-targets:         # directories to be removed by `dbt clean`
 
 # Configuración para materialización de modelos
 models:
-  crypto_project:  # Nombre del proyecto
+  crypto_project:
     staging:  # Modelos staging (Silver)
       +database: DEV_SILVER_DB
       +schema: staging
@@ -50,3 +50,6 @@ models:
       +database: DEV_GOLD_DB
       +schema: marts
       +materialized: table  # Por defecto, los modelos finales serán tablas
+      core:
+        +schema: core  # Modelos en marts/core irán al esquema 'core'
+

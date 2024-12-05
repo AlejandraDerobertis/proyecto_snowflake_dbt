@@ -340,42 +340,51 @@ models:
             to: ref('stg_dim_times')
             field: time_id
       - name: gas_cost
-        description: "Costo del gas consumido en la transacción."
+        description: Costo del gas consumido en la transacción.
 
-
-      - name: crypto_events
-        description: Tabla fuente que contiene eventos de diferentes fuentes.
-        columns:
-          - name: source
-            description: "Fuente del evento."
-            tests:
-              - not_null
-        
-          - name: event
-            description: Descripcióm del evento.
-            tests:
-            - not_null
-
-          - name: sentiment
-            description: Sentimiento asociado al evento, puede ser POSITIVO, NEGATIVO Y NEUTRO
-            tests:
-              - not_null
-          
-          - name: score 
-            description: Puntuación de sentimiento del evento, va de 0 a 1 siendo 0 muy positivo y 1 muy negativo.
-            tests:
-              - not_null
-            
-          - name: event_date
-            description: Fecha y hora del evento en formato TIMESTAMP.
-            tests:
-              - not_null
-
-          - name: id_events
-            description: Clave primaria generada al combinar la fuente y la fecha del evento.
-            tests:
-              - not_null
-              - unique
+  - name: stg_fact_events
+    description: Tabla fuente que contiene eventos de diferentes fuentes.
+    columns:
+      - name: id_events
+        description: Identificador único del evento, compuesto por la fuente y la fecha.
+        tests:
+          - unique               
+          - not_null              
+      - name: source
+        description: Fuente del evento (noticias, redes sociales).
+        tests:
+          - not_null             
+      - name: event
+        description: Descripción del evento.
+        tests:
+          - not_null              
+      - name: sentiment
+        description: Sentimiento asociado al evento (positivo, negativo, neutral).
+        tests:
+          - not_null              
+          - accepted_values:
+              values: ["positive", "negative", "neutral"]
+      - name: score
+        description:  Puntuación de sentimiento del evento, va de 0 a 1 siendo 0 muy positivo y 1 muy negativo.
+        tests:
+          - not_null              
+          - relationships:
+              to: stg_dim_dates.date_id  
+              field: date_id
+      - name: date_id
+        description: "Identificador de la fecha, mapeado desde la dimensión de fechas."
+        tests:
+          - not_null            
+          - relationships:
+              to: stg_dim_dates
+              field: date_id
+      - name: event_time
+        description: "Hora del evento, extraída del campo original 'date'."
+        tests:
+          - not_null
+          - relationships:
+              to: stg_dim_time
+              field: time_id
 
 
 

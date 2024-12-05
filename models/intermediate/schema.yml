@@ -126,5 +126,122 @@ models:
       - name: average_price
         description: Precio promedio del día.
 
-      
+
+  - name: int_networks_usage_metrics
+    description: Métricas de uso por red, incluyendo número de transacciones y volumen total.
+    columns:
+      - name: network_id
+        description: Identificador único de la red.
+        tests:
+          - not_null
+          - unique
+      - name: network_name
+        description: Nombre de la red.
+        tests:
+          - not_null
+      - name: network_code
+        description: Código de la red.
+        tests:
+          - not_null
+      - name: total_transactions
+        description: Número total de transacciones por red.
+        tests:
+          - not_null
+      - name: total_volume_network
+        description: Volumen total de transacciones por red.
+        tests:
+          - not_null
+
+  - name: int_tokens_usage_metrics
+    description: Métricas en base al uso de criptomonedas, diferenciadas entre swaps y transactions.
+    columns:
+      - name: token_symbol
+        description: Símbolo de la criptomoneda.
+        tests:
+          - not_null
+      - name: transaction_type
+        description: "Tipo de transacción: 'T' para transactions o 'S' para swaps."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['T', 'S']
+      - name: total_transactions
+        description: Número total de transacciones por moneda.
+        tests:
+          - not_null
+      - name: total_volume
+        description: Volumen total de transacciones por moneda.
+        tests:
+          - not_null
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - token_symbol
+            - transaction_type
+
+
+  - name: int_time_transactions_metrics
+    description: Métricas base de actividad por días y horas de transacciones, diferenciadas por tipo.
+    columns:
+      - name: date_id
+        description: Identificador único de la fecha.
+        tests:
+          - not_null
+          - relationships:
+              to: stg_dim_dates
+              field: date_id
+      - name: time_id
+        description: Identificador único de la hora.
+        tests:
+          - not_null
+          - relationships:
+              to: stg_dim_times
+              field: time_id
+      - name: transaction_type
+        description: Tipo de transacción ('S' para swaps, 'T' para transactions).
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['S', 'T']
+      - name: total_transactions
+        description: Número total de transacciones por día y hora.
+        tests:
+          - not_null
+      - name: total_volume
+        description: Volumen total de transacciones por día y hora.
+        tests:
+          - not_null
+
+  - name: int_event_price_variation
+    description: Métricas diarias de precios en relación con los eventos, incluyendo variación diaria y acumulativa.
+    columns:
+      - name: id_events
+        description: Identificador único del evento.
+        tests:
+          - not_null
+          - unique
+      - name: date_id
+        description: Identificador único de la fecha.
+        tests:
+          - not_null
+          - relationships:
+              to: stg_dim_dates
+              field: date_id
+      - name: event_time
+        description: Hora del evento.
+        tests:
+          - not_null
+      - name: symbol
+        description: Símbolo de la criptomoneda.
+        tests:
+          - not_null
+      - name: daily_price
+        description: Precio diario de la criptomoneda en relación con el evento.
+        tests:
+          - not_null
+      - name: daily_variation
+        description: Variación diaria de precio.
+      - name: cumulative_variation
+        description: Variación acumulativa del precio en relación con el evento.
+
 
